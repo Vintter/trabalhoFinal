@@ -9,12 +9,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import com.example.iwanttobelieve.ui.data.AppViewModel
+import com.example.iwanttobelieve.ui.theme.IWantToBelieveTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreatePostScreen(
-    onPostPublished: (String) -> Unit,
-    onBack: () -> Unit
+    viewModel: AppViewModel,
+    onBack: () -> Unit,
+    onPostPublished: (String) -> Unit
 ) {
     var postText by remember { mutableStateOf("") }
     val maxCharLimit = 250
@@ -87,7 +90,7 @@ fun CreatePostScreen(
             onClick = onBack,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Cancelar", color = MaterialTheme.colorScheme.primary)
+            Text("Ver Perfil", color = MaterialTheme.colorScheme.primary)
         }
     }
 }
@@ -95,5 +98,11 @@ fun CreatePostScreen(
 @Preview(showBackground = true)
 @Composable
 fun CreatePostScreenPreview() {
-    CreatePostScreen(onPostPublished = {}, onBack = {})
+    IWantToBelieveTheme {
+        CreatePostScreen(
+            viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+            onBack = {},
+            onPostPublished = {}
+        )
+    }
 }

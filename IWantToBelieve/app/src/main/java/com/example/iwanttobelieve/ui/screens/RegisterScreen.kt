@@ -20,12 +20,15 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.iwanttobelieve.ui.data.AppViewModel
+import com.example.iwanttobelieve.ui.theme.IWantToBelieveTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
-    onRegisterSuccess: () -> Unit,
-    onBackToLogin: () -> Unit
+    viewModel: AppViewModel,
+    onNavigateToLogin: () -> Unit,
+    onRegisterSuccess: () -> Unit
 ) {
     var name by remember { mutableStateOf("") }
     var nickname by remember { mutableStateOf("") }
@@ -164,6 +167,7 @@ fun RegisterScreen(
                     } else {
                         errorMessage = "Por favor, preencha todos os campos obrigatórios."
                     }
+                    viewModel.register(email, password, name, nickname)
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -172,7 +176,7 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            TextButton(onClick = onBackToLogin) {
+            TextButton(onClick = onNavigateToLogin) {
                 Text("Já tem uma conta? Faça Login", color = MaterialTheme.colorScheme.primary)
             }
         }
@@ -182,5 +186,11 @@ fun RegisterScreen(
 @Preview(showBackground = true)
 @Composable
 fun RegisterScreenPreview() {
-    RegisterScreen(onRegisterSuccess = {}, onBackToLogin = {})
+    IWantToBelieveTheme {
+        RegisterScreen(
+            viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+            onNavigateToLogin = {},
+            onRegisterSuccess = {}
+        )
+    }
 }

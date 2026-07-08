@@ -41,4 +41,14 @@ class FirestoreRepository {
 
         awaitClose { listener.remove() }
     }
+
+
+    suspend fun getUserProfile(uid: String): User? {
+        return try {
+            val document = firestore.collection("users").document(uid).get().await()
+            document.toObject(User::class.java)
+        } catch (e: Exception) {
+            null
+        }
+    }
 }

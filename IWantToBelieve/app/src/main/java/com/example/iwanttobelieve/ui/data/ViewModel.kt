@@ -24,8 +24,19 @@ class AppViewModel : ViewModel() {
     private val _posts = MutableStateFlow<List<Post>>(emptyList())
     val posts: StateFlow<List<Post>> = _posts.asStateFlow()
 
+    private val _userProfile = MutableStateFlow<User?>(null)
+    val userProfile: StateFlow<User?> = _userProfile.asStateFlow()
+
     init {
         observePosts()
+        fetchUserProfile()
+    }
+
+    fun fetchUserProfile() {
+        val uid = _currentUser.value?.uid ?: return
+        viewModelScope.launch {
+            _userProfile.value = firestoreRepository.getUserProfile(uid)
+        }
     }
 
     fun register(email: String, password: String, name: String, nickname: String) {
@@ -34,7 +45,8 @@ class AppViewModel : ViewModel() {
             val firebaseUser = authRepository.registerWithEmail(email, password)
             if (firebaseUser != null) {
                 _currentUser.value = firebaseUser
-                val newUser = User(uid = firebaseUser.uid, name = name, nickname = nickname, email = email)
+                val newUser =
+                    User(uid = firebaseUser.uid, name = name, nickname = nickname, email = email)
                 firestoreRepository.saveUserProfile(newUser)
             } else {
                 _authError.value = "Falha no cadastro. Verifique os dados ou a senha."
@@ -59,7 +71,12 @@ class AppViewModel : ViewModel() {
         _currentUser.value = null
     }
 
-    fun addNewPost(text: String, authorName: String, authorNickname: String, imageUrls: List<String>) {
+    fun addNewPost(
+        text: String,
+        authorName: String,
+        authorNickname: String,
+        imageUrls: List<String>
+    ) {
         val currentUid = _currentUser.value?.uid ?: return
         viewModelScope.launch {
             val newPost = Post(

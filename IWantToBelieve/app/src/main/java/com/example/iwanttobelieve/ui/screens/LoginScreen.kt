@@ -16,10 +16,14 @@ import androidx.compose.ui.res.painterResource
 import com.example.iwanttobelieve.R
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
+import com.example.iwanttobelieve.ui.data.AppViewModel
+import com.example.iwanttobelieve.ui.theme.IWantToBelieveTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
+    viewModel: AppViewModel,
+    onNavigateToRegister: () -> Unit,
     onLoginSuccess: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
@@ -107,5 +111,11 @@ fun LoginScreen(
 @Preview(showBackground = true)
 @Composable
 fun LoginScreenPreview() {
-    LoginScreen(onLoginSuccess = {})
+    IWantToBelieveTheme {
+        LoginScreen(
+            viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+            onNavigateToRegister = {},
+            onLoginSuccess = {}
+        )
+    }
 }
