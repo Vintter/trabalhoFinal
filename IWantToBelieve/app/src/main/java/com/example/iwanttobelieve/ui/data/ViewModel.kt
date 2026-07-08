@@ -1,56 +1,84 @@
 package com.example.iwanttobelieve.ui.data
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.iwanttobelieve.ui.data.PostDao
-import com.example.iwanttobelieve.ui.data.Post
-import kotlinx.coroutines.flow.SharingStarted
+import com.example.iwanttobelieve.ui.data.repository.AuthRepository
+import com.example.iwanttobelieve.ui.data.repository.FirestoreRepository
+import com.google.firebase.auth.FirebaseUser
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class PostViewModel(private val postDao: PostDao) : ViewModel() {
+class AppViewModel : ViewModel() {
 
-    val allPosts: StateFlow<List<Post>> = postDao.getAllPosts()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+    private val authRepository = AuthRepository()
+    private val firestoreRepository = FirestoreRepository()
 
-    fun insertPost(text: String, authorName: String, authorNickname: String) {
+    private val _currentUser = MutableStateFlow<FirebaseUser?>(authRepository.currentUser)
+    val currentUser: StateFlow<FirebaseUser?> = _currentUser.asStateFlow()
+
+    private val _authError = MutableStateFlow<String?>(null)
+    val authError: StateFlow<String?> = _authError.asStateFlow()
+
+    private val _posts = MutableStateFlow<List<Post>>(emptyList())
+    val posts: StateFlow<List<Post>> = _posts.asStateFlow()
+
+    init {
+        observePosts()
+    }
+
+    fun register(email: String, password: String, name: String, nickname: String) {
+        viewModelScope.launch {
+            _authError.value = null
+            val firebaseUser = authRepository.registerWithEmail(email, password)
+            if (firebaseUser != null) {
+                _currentUser.value = firebaseUser
+                val newUser = User(uid = firebaseUser.uid, name = name, nickname = nickname, email = email)
+                firestoreRepository.saveUserProfile(newUser)
+            } else {
+                _authError.value = "Falha no cadastro. Verifique os dados ou a senha."
+            }
+        }
+    }
+
+    fun login(email: String, password: String) {
+        viewModelScope.launch {
+            _authError.value = null
+            val firebaseUser = authRepository.loginWithEmail(email, password)
+            if (firebaseUser != null) {
+                _currentUser.value = firebaseUser
+            } else {
+                _authError.value = "E-mail ou senha incorretos."
+            }
+        }
+    }
+
+    fun logout() {
+        authRepository.logout()
+        _currentUser.value = null
+    }
+
+    fun addNewPost(text: String, authorName: String, authorNickname: String, imageUrls: List<String>) {
+        val currentUid = _currentUser.value?.uid ?: return
         viewModelScope.launch {
             val newPost = Post(
-                text = text,
+                userId = currentUid,
                 authorName = authorName,
                 authorNickname = authorNickname,
-                timestamp = "Agora mesmo"
+                text = text,
+                timestamp = System.currentTimeMillis(),
+                images = imageUrls
             )
-            postDao.insertPost(newPost)
+            firestoreRepository.createPost(newPost)
         }
     }
 
-    fun updatePost(post: Post) {
+    private fun observePosts() {
         viewModelScope.launch {
-            postDao.updatePost(post)
+            firestoreRepository.getAllPosts().collect { postsList ->
+                _posts.value = postsList
+            }
         }
-    }
-
-    fun deletePost(post: Post) {
-        viewModelScope.launch {
-            postDao.deletePost(post)
-        }
-    }
-}
-
-
-class PostViewModelFactory(private val postDao: PostDao) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(PostViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return PostViewModel(postDao) as T
-        }
-        throw IllegalArgumentException("Classe ViewModel desconhecida")
     }
 }
