@@ -16,8 +16,14 @@ interface PostDao {
     @Query("SELECT * FROM posts WHERE id = :id")
     suspend fun getPostById(id: Int): Post?
 
+    @Query("SELECT * FROM posts ORDER BY id DESC")
+    fun getAllPostsWithImages(): Flow<List<PostImages>>
+
     @Insert
-    suspend fun insertPost(post: Post)
+    suspend fun insertPost(post: Post): Long
+
+    @Insert
+    suspend fun insertImages(images: List<Image>)
 
     @Update
     suspend fun updatePost(post: Post)

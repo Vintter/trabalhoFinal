@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey
 data class Post(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
+    val userId: Int,
     val authorName: String,
     val authorNickname: String,
     val text: String,
