@@ -30,6 +30,22 @@ fun RegisterScreen(
     onNavigateToLogin: () -> Unit,
     onRegisterSuccess: () -> Unit
 ) {
+    RegisterScreenContent(
+        onRegister = { email, password, name, nickname ->
+            viewModel.register(email, password, name, nickname)
+        },
+        onNavigateToLogin = onNavigateToLogin,
+        onRegisterSuccess = onRegisterSuccess
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RegisterScreenContent(
+    onRegister: (String, String, String, String) -> Unit,
+    onNavigateToLogin: () -> Unit,
+    onRegisterSuccess: () -> Unit
+) {
     var name by remember { mutableStateOf("") }
     var nickname by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -167,7 +183,7 @@ fun RegisterScreen(
                     } else {
                         errorMessage = "Por favor, preencha todos os campos obrigatórios."
                     }
-                    viewModel.register(email, password, name, nickname)
+                    onRegister(email, password, name, nickname)
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -183,12 +199,12 @@ fun RegisterScreen(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, apiLevel = 34)
 @Composable
 fun RegisterScreenPreview() {
     IWantToBelieveTheme {
-        RegisterScreen(
-            viewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+        RegisterScreenContent(
+            onRegister = { _, _, _, _ -> },
             onNavigateToLogin = {},
             onRegisterSuccess = {}
         )
