@@ -207,23 +207,19 @@ fun PostItem(
 ) {
     var isImageError by remember { mutableStateOf(false) }
 
-    // Converte a string Base64 em um Bitmap de forma segura na memória do aparelho
     val postBitmap: Bitmap? = remember(post.images) {
         try {
             if (post.images.isNotEmpty()) {
                 val base64String = post.images.first()
 
-                // Remove o cabeçalho "data:image/jpeg;base64," se ele existir na string
                 val cleanBase64 = if (base64String.contains(",")) {
                     base64String.substringAfter(",")
                 } else {
                     base64String
                 }
 
-                // Decodifica a string de texto de volta para bytes físicos
                 val decodedBytes = Base64.decode(cleanBase64, Base64.DEFAULT)
 
-                // Transforma os bytes em uma imagem (Bitmap) para o Android renderizar
                 BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
             } else {
                 null
