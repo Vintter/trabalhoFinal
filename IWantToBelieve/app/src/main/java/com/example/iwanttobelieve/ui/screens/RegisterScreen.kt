@@ -1,6 +1,5 @@
 package com.example.iwanttobelieve.ui.screens
 
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -23,35 +22,44 @@ import androidx.compose.ui.unit.dp
 import com.example.iwanttobelieve.ui.data.AppViewModel
 import com.example.iwanttobelieve.ui.theme.IWantToBelieveTheme
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
     viewModel: AppViewModel,
     onNavigateToLogin: () -> Unit,
     onRegisterSuccess: () -> Unit
 ) {
+
+    val currentUser by viewModel.currentUser.collectAsState()
+    val authError by viewModel.authError.collectAsState()
+
+    LaunchedEffect(currentUser) {
+        if (currentUser != null) {
+            onRegisterSuccess()
+        }
+    }
+
     RegisterScreenContent(
+        serverError = authError,
         onRegister = { email, password, name, nickname ->
-            viewModel.register(email, password, name, nickname)
+            viewModel.register(email.trim(), password.trim(), name.trim(), nickname.trim())
         },
-        onNavigateToLogin = onNavigateToLogin,
-        onRegisterSuccess = onRegisterSuccess
+        onNavigateToLogin = onNavigateToLogin
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreenContent(
+    serverError: String?,
     onRegister: (String, String, String, String) -> Unit,
-    onNavigateToLogin: () -> Unit,
-    onRegisterSuccess: () -> Unit
+    onNavigateToLogin: () -> Unit
 ) {
     var name by remember { mutableStateOf("") }
     var nickname by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var localError by remember { mutableStateOf<String?>(null) }
     var isPhotoSelected by remember { mutableStateOf(false) }
 
     Surface(
@@ -79,8 +87,6 @@ fun RegisterScreenContent(
                     .clip(CircleShape)
                     .background(Color.White.copy(alpha = 0.4f))
                     .clickable {
-                        // Aqui no futuro entrará a lógica de abrir a galeria.
-                        // Por enquanto, apenas simula a seleção ao clicar.
                         isPhotoSelected = !isPhotoSelected
                     },
                 contentAlignment = Alignment.Center
@@ -112,7 +118,7 @@ fun RegisterScreenContent(
 
             OutlinedTextField(
                 value = name,
-                onValueChange = { name = it },
+                onValueChange = { name = it; localError = null },
                 label = { Text("Nome Completo") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                 modifier = Modifier.fillMaxWidth()
@@ -122,7 +128,7 @@ fun RegisterScreenContent(
 
             OutlinedTextField(
                 value = nickname,
-                onValueChange = { nickname = it },
+                onValueChange = { nickname = it; localError = null },
                 label = { Text("Nickname (Usuário)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                 modifier = Modifier.fillMaxWidth()
@@ -132,17 +138,17 @@ fun RegisterScreenContent(
 
             OutlinedTextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = { email = it; localError = null },
                 label = { Text("E-mail") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             OutlinedTextField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = { password = it; localError = null },
                 label = { Text("Senha") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 visualTransformation = PasswordVisualTransformation(),
@@ -153,7 +159,7 @@ fun RegisterScreenContent(
 
             OutlinedTextField(
                 value = confirmPassword,
-                onValueChange = { confirmPassword = it },
+                onValueChange = { confirmPassword = it; localError = null },
                 label = { Text("Confirmar Senha") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 visualTransformation = PasswordVisualTransformation(),
@@ -161,10 +167,11 @@ fun RegisterScreenContent(
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-            
-            if (errorMessage != null) {
+
+            val displayError = localError ?: serverError
+            if (displayError != null) {
                 Text(
-                    text = errorMessage!!,
+                    text = displayError,
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
@@ -172,18 +179,18 @@ fun RegisterScreenContent(
 
             Button(
                 onClick = {
-                    if (name.isNotBlank() && nickname.isNotBlank() && email.isNotBlank() && password.isNotBlank()) {
+                    localError = null
 
+                    if (name.isNotBlank() && nickname.isNotBlank() && email.isNotBlank() && password.isNotBlank()) {
                         if (password == confirmPassword) {
-                            errorMessage = null
-                            onRegisterSuccess()
+
+                            onRegister(email, password, name, nickname)
                         } else {
-                            errorMessage = "As senhas não coincidem. Tente novamente."
+                            localError = "As senhas não coincidem. Tente novamente."
                         }
                     } else {
-                        errorMessage = "Por favor, preencha todos os campos obrigatórios."
+                        localError = "Por favor, preencha todos os campos obrigatórios."
                     }
-                    onRegister(email, password, name, nickname)
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -204,9 +211,9 @@ fun RegisterScreenContent(
 fun RegisterScreenPreview() {
     IWantToBelieveTheme {
         RegisterScreenContent(
+            serverError = null,
             onRegister = { _, _, _, _ -> },
-            onNavigateToLogin = {},
-            onRegisterSuccess = {}
+            onNavigateToLogin = {}
         )
     }
 }

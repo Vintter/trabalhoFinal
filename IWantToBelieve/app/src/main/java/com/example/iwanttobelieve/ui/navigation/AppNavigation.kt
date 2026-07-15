@@ -72,9 +72,6 @@ fun AppNavigation() {
                     viewModel = appViewModel,
                     onBack = {
                         navController.popBackStack()
-                    },
-                    onPostPublished = {
-                        navController.popBackStack()
                     }
                 )
             }

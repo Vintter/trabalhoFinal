@@ -25,6 +25,7 @@ fun LoginScreen(
     onNavigateToRegister: () -> Unit,
     onLoginSuccess: () -> Unit
 ) {
+
     val currentUser by viewModel.currentUser.collectAsState()
     val authError by viewModel.authError.collectAsState()
 
