@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import androidx.core.net.toUri
+import kotlinx.coroutines.Job
 
 class AppViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -29,12 +30,31 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val _userProfile = MutableStateFlow<User?>(null)
     val userProfile: StateFlow<User?> = _userProfile.asStateFlow()
 
+
+    private var postsJob: Job? = null
+
     init {
-        observePosts()
-        // Tenta recuperar o perfil se já houver um usuário logado no Firebase
         authRepository.currentUser?.let { user ->
             _currentUser.value = user
             fetchUserProfile()
+            startObservingPosts()
+        }
+    }
+
+    fun startObservingPosts() {
+        postsJob?.cancel()
+
+        postsJob = viewModelScope.launch {
+            try {
+                android.util.Log.d("AppViewModel", "Iniciando escuta de posts em tempo real...")
+                firestoreRepository.getAllPosts().collect { postsList ->
+                    android.util.Log.d("AppViewModel", "Posts atualizados recebidos: ${postsList.size}")
+                    _posts.value = postsList
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("AppViewModel", "Erro ao observar posts: ${e.message}", e)
+                _posts.value = emptyList()
+            }
         }
     }
 
@@ -68,6 +88,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                     firestoreRepository.saveUserProfile(newUser)
                     _userProfile.value = newUser
                     android.util.Log.d("AppViewModel", "Perfil salvo e atualizado localmente.")
+                    startObservingPosts()
                 } catch (e: Exception) {
                     _authError.value = "Erro ao salvar perfil: ${e.message}"
                 }
@@ -84,6 +105,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             if (firebaseUser != null) {
                 _currentUser.value = firebaseUser
                 fetchUserProfile()
+                startObservingPosts()
             } else {
                 _authError.value = "E-mail ou senha incorretos."
             }
@@ -91,9 +113,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun logout() {
+        postsJob?.cancel()
+        postsJob = null
+
         authRepository.logout()
         _currentUser.value = null
         _userProfile.value = null
+        _posts.value = emptyList()
     }
 
     fun addNewPost(
@@ -137,21 +163,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             } catch (e: Exception) {
                 android.util.Log.e("AppViewModel", "Erro ao criar post: ${e.message}", e)
                 onError("Erro ao criar post: ${e.message}")
-            }
-        }
-    }
-
-    private fun observePosts() {
-        viewModelScope.launch {
-            try {
-                android.util.Log.d("AppViewModel", "Iniciando escuta de posts em tempo real...")
-                firestoreRepository.getAllPosts().collect { postsList ->
-                    android.util.Log.d("AppViewModel", "Posts atualizados recebidos: ${postsList.size}")
-                    _posts.value = postsList
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("AppViewModel", "Erro ao observar posts: ${e.message}", e)
-                _posts.value = emptyList()
             }
         }
     }

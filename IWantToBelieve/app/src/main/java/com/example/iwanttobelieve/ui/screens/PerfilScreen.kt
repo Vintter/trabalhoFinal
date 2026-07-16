@@ -38,15 +38,9 @@ fun PerfilScreen(
 
     val allPosts by viewModel.posts.collectAsState(initial = emptyList())
 
-    val userPosts = remember(allPosts, currentUser) {
-        if (currentUser != null) {
-            allPosts.filter { it.userId == currentUser?.uid }
-        } else {
-            emptyList()
-        }
-    }
+    val userPosts = allPosts.filter { it.userId == currentUser?.uid }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(currentUser) {
         viewModel.fetchUserProfile()
     }
 
