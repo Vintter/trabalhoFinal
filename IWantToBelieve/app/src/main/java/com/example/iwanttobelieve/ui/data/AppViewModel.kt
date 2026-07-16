@@ -13,6 +13,11 @@ import kotlinx.coroutines.launch
 import androidx.core.net.toUri
 import kotlinx.coroutines.Job
 
+// IMPORTS CRUTIAIS CORRIGIDOS: Necessários aqui para o funcionamento do "by mutableStateOf"
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+
 class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     private val authRepository = AuthRepository()
@@ -30,8 +35,21 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val _userProfile = MutableStateFlow<User?>(null)
     val userProfile: StateFlow<User?> = _userProfile.asStateFlow()
 
-
     private var postsJob: Job? = null
+    var registerName by mutableStateOf("")
+    var registerNickname by mutableStateOf("")
+    var registerEmail by mutableStateOf("")
+    var registerPassword by mutableStateOf("")
+    var registerConfirmPassword by mutableStateOf("")
+
+    // Função para resetar os campos quando o cadastro for bem-sucedido
+    fun clearRegisterForm() {
+        registerName = ""
+        registerNickname = ""
+        registerEmail = ""
+        registerPassword = ""
+        registerConfirmPassword = ""
+    }
 
     init {
         authRepository.currentUser?.let { user ->
